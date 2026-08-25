@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Valores — TDR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0605;
+    --bg-elev: #130a09;
+    --bg-card: #1a0e0c;
+    --bg-input: #100908;
+    --border: #3a1613;
+    --border-soft: #26100e;
+    --red: #b3141a;
+    --red-bright: #ff2e2e;
+    --red-dim: #6e1214;
+    --silver: #c7c1b8;
+    --bone: #ece5da;
+    --muted: #8a7568;
+    --green: #3ddc73;
+    --shadow-glow: 0 0 24px rgba(255,46,46,0.18);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    background: radial-gradient(ellipse at 50% -10%, #1a0a09 0%, var(--bg) 55%);
+    color: var(--bone);
+    font-family: 'Oswald', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap{
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 36px 20px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .header{
+    text-align:center;
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid var(--border-soft);
+    position: relative;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .title{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 8vw, 68px);
+    letter-spacing: 3px;
+    line-height: 1;
+    margin: 0;
+    color: var(--bone);
+    text-shadow: 0 0 18px rgba(255,46,46,0.35), 0 0 2px rgba(255,255,255,0.15);
+  }
+  .title span{ color: var(--red-bright); }
+  .scorpion{
+    width: 46px;
+    height: 46px;
+    margin: 14px auto 0;
+    opacity: 0.85;
+    filter: drop-shadow(0 0 8px rgba(255,46,46,0.5));
+  }
+
+  /* ---------- Layout ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 800px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow-glow), inset 0 0 40px rgba(0,0,0,0.4);
+    padding: 22px;
+  }
+
+  .card-title{
+    font-family:'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--red-bright);
+    margin: 0 0 18px 0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .card-title::before{
+    content:'';
+    width: 6px; height: 18px;
+    background: var(--red-bright);
+    box-shadow: 0 0 8px var(--red-bright);
+    display:inline-block;
+  }
+
+  /* ---------- Faction / Parceria controls ---------- */
+  .top-controls{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    margin-bottom: 22px;
+    align-items:end;
+  }
+  @media (max-width: 520px){
+    .top-controls{ grid-template-columns: 1fr; }
+  }
+  label{
+    display:block;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  input[type="text"]{
+    width:100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--bone);
+    font-family:'Oswald', sans-serif;
+    font-size: 16px;
+    padding: 11px 12px;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]:focus{
+    border-color: var(--red-bright);
+    box-shadow: 0 0 0 3px rgba(255,46,46,0.15);
+  }
+  input[type="text"]::placeholder{ color: #52413a; }
+
+  .toggle{
+    display:flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow:hidden;
+    background: var(--bg-input);
+  }
+  .toggle button{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 11px 18px;
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .toggle button.active{
+    background: var(--red);
+    color: var(--bone);
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.3);
+  }
+  .toggle button:not(.active):hover{ color: var(--bone); }
+  .toggle button:focus-visible{ outline: 2px solid var(--red-bright); outline-offset: -2px; }
+
+  /* ---------- Item table ---------- */
+  .item-row{
+    display:grid;
+    grid-template-columns: 40px 1fr 90px 110px;
+    gap: 12px;
+    align-items:center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .item-row:last-child{ border-bottom:none; }
+  .item-row.head{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 12px;
+  }
+  .badge{
+    width: 34px; height: 34px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: linear-gradient(160deg, #241110, #150a09);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue', sans-serif;
+    font-size: 13px;
+    color: var(--red-bright);
+    letter-spacing: 0.5px;
+  }
+  .item-name{ font-size: 15px; color: var(--bone); }
+  .item-price{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--silver);
+    text-align:right;
+  }
+  .qty-input{
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--bone);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 15px;
+    text-align:center;
+    padding: 8px 4px;
+    border-radius: 4px;
+    outline:none;
+    -moz-appearance: textfield;
+  }
+  .qty-input::-webkit-outer-spin-button,
+  .qty-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .qty-input:focus{ border-color: var(--red-bright); box-shadow: 0 0 0 3px rgba(255,46,46,0.15); }
+
+  .rate-note{
+    margin-top: 16px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height:1.7;
+    color: var(--muted);
+    border-top: 1px dashed var(--border);
+    padding-top: 14px;
+  }
+  .rate-note b{ color: var(--silver); }
+
+  /* ---------- Services (Desmanche / Lavagem) ---------- */
+  .service-row{
+    display:grid;
+    grid-template-columns: 40px 1fr 150px 110px 110px;
+    gap: 12px;
+    align-items:center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .service-row:last-child{ border-bottom:none; }
+  @media (max-width: 640px){
+    .service-row{ grid-template-columns: 40px 1fr; row-gap: 8px; }
+    .service-row .money-input-wrap, .service-row .liberado{ grid-column: 2 / 3; }
+  }
+  .service-row.head{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 12px;
+  }
+  .money-input-wrap{
+    position:relative;
+  }
+  .money-input-wrap::before{
+    content: 'R$';
+    position:absolute;
+    left: 10px; top:50%;
+    transform: translateY(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .money-input{
+    width:100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--bone);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 9px 10px 9px 32px;
+    border-radius: 4px;
+    outline:none;
+  }
+  .money-input:focus{ border-color: var(--red-bright); box-shadow: 0 0 0 3px rgba(255,46,46,0.15); }
+  .liberado{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-align:right;
+  }
+  .liberado.cliente{ color: var(--silver); }
+  .liberado.comissao{ color: var(--green); }
+  .liberado .lbl{
+    display:block;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .commission-total{
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(61,220,115,0.06);
+    border: 1px solid rgba(61,220,115,0.3);
+    border-radius: 4px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--muted);
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+  }
+  .commission-total b{
+    color: var(--green);
+    font-size: 15px;
+  }
+
+  /* ---------- Receipt ---------- */
+  .receipt{
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(255,255,255,0.02) 28px),
+      var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .receipt-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display:flex;
+    justify-content: space-between;
+  }
+  .receipt-line{
+    display:flex;
+    gap: 10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    line-height: 1.9;
+    color: var(--bone);
+  }
+  .dot{
+    color: var(--green);
+    flex-shrink:0;
+  }
+  .receipt-line .k{ color: var(--muted); }
+  .receipt-line .v{ color: var(--bone); font-weight: 600; }
+  .receipt-line.total .v{ color: var(--silver); font-size: 15px; }
+  .receipt-line.deposit .v{ color: var(--red-bright); font-size: 16px; text-shadow: 0 0 10px rgba(255,46,46,0.4); }
+
+  .stamp{
+    position:absolute;
+    top: 18px; right: -8px;
+    width: 108px; height: 108px;
+    border: 3px solid var(--red-bright);
+    border-radius: 50%;
+    color: var(--red-bright);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    font-family:'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 2px;
+    transform: rotate(14deg);
+    opacity: 0;
+    transition: opacity .35s ease, transform .35s ease;
+    box-shadow: 0 0 14px rgba(255,46,46,0.35);
+    mix-blend-mode: screen;
+    pointer-events:none;
+  }
+  .stamp.show{ opacity: 0.85; transform: rotate(14deg) scale(1); }
+  .stamp span{ display:block; }
+
+  .copy-btn{
+    margin-top: 20px;
+    width: 100%;
+    background: var(--red);
+    color: var(--bone);
+    border: 1px solid var(--red-bright);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 13px;
+    border-radius: 4px;
+    cursor:pointer;
+    transition: background .15s, box-shadow .15s;
+  }
+  .copy-btn:hover{ background: #d61a1a; box-shadow: 0 0 16px rgba(255,46,46,0.4); }
+  .copy-btn:active{ transform: translateY(1px); }
+  .copy-btn.copied{ background: #1f7a3f; border-color: var(--green); }
+
+  .empty-note{
+    color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="eyebrow">Facção · Ledger de Operações</div>
+    <h1 class="title">TABELA DE <span>VALORES</span> — TDR</h1>
+    <svg class="scorpion" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 50c4-2 7-1 9 2M8 50c2-4 1-8-2-10M8 50c-3 1-6-1-7-4" stroke="#ff2e2e" stroke-width="2" stroke-linecap="round"/>
+      <path d="M10 46c8-2 14 2 18 8" stroke="#c7c1b8" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="30" cy="52" rx="8" ry="5" fill="#c7c1b8"/>
+      <path d="M36 50c6-1 10 2 12-4s-2-9-8-8" stroke="#c7c1b8" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M48 38c4 1 6-2 6-5s-3-5-6-3" stroke="#ff2e2e" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <circle cx="54" cy="30" r="2.6" fill="#ff2e2e"/>
+      <path d="M20 46l-6-4M22 44l-5-6M24 42l-3-7" stroke="#c7c1b8" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="grid">
+
+    <!-- CONFIG CARD -->
+    <div class="card">
+      <div class="top-controls">
+        <div>
+          <label for="faccao">Facção</label>
+          <input type="text" id="faccao" placeholder="Digite o nome da facção">
+        </div>
+        <div>
+          <label>Parceria</label>
+          <div class="toggle">
+            <button type="button" id="btn-sim">SIM</button>
+            <button type="button" id="btn-nao" class="active">NÃO</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-title">Itens</div>
+
+      <div class="item-row head">
+        <div></div>
+        <div>Item</div>
+        <div style="text-align:center">Qtd</div>
+        <div style="text-align:right">Preço unit.</div>
+      </div>
+
+      <div id="item-list"></div>
+
+      <div class="card-title" style="margin-top:22px">Desmanche &amp; Lavagem</div>
+
+      <div class="service-row head">
+        <div></div>
+        <div>Serviço</div>
+        <div>Valor recebido</div>
+        <div style="text-align:right">Valor do cliente</div>
+      </div>
+
+      <div class="service-row">
+        <div class="badge">🚗</div>
+        <div class="item-name">Desmanche</div>
+        <div class="money-input-wrap">
+          <input class="money-input" type="number" min="0" value="0" id="input-desmanche" inputmode="numeric">
+        </div>
+        <div class="liberado"><span class="lbl">Liberado</span><span id="out-desmanche">R$0</span></div>
+      </div>
+
+      <div class="service-row">
+        <div class="badge">💸</div>
+        <div class="item-name">Lavagem</div>
+        <div class="money-input-wrap">
+          <input class="money-input" type="number" min="0" value="0" id="input-lavagem" inputmode="numeric">
+        </div>
+        <div class="liberado"><span class="lbl">Liberado</span><span id="out-lavagem">R$0</span></div>
+      </div>
+
+      <div class="rate-note">
+        <b>Taxa aplicada</b> — sobre itens, desmanche e lavagem, conforme parceria:<br>
+        Com parceria: <b>80%</b> &nbsp;·&nbsp; Sem parceria: <b>70%</b>
+      </div>
+    </div>
+
+    <!-- RECEIPT CARD -->
+    <div class="card receipt">
+      <div class="stamp" id="stamp"><span>REGISTRO</span><span>APROVADO</span></div>
+      <div class="receipt-label">
+        <span>Comprovante</span>
+        <span id="receipt-time"></span>
+      </div>
+
+      <div id="receipt-body"></div>
+
+      <button class="copy-btn" id="copy-btn">Copiar comprovante</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const ITEMS = [
+    { id:'lockpick',  name:'Lockpick',           parceria:12500, sem:13500 },
+    { id:'mochila',   name:'Mochila Reforçada',  parceria:20500, sem:22500 },
+    { id:'algemas',   name:'Algemas',            parceria:12500, sem:13500 },
+    { id:'rastreador',name:'Rastreador',         parceria:40500, sem:45000 },
+    { id:'silenciador',name:'Silenciador',       parceria:40500, sem:45000 },
+    { id:'ticket',    name:'Ticket de Corrida',  parceria:6480,  sem:7200  },
+    { id:'colete',    name:'Colete',             parceria:14580, sem:16200 },
+  ];
+
+  const state = {
+    faccao: '',
+    parceria: false,
+    qty: Object.fromEntries(ITEMS.map(i => [i.id, 0])),
+    desmanche: 0,
+    lavagem: 0
+  };
+
+  const fmtBRL = (n) => 'R$' + new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.round(n));
+  const fmtBRLspace = (n) => 'R$ ' + new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.round(n));
+  const initials = (name) => name.split(' ').map(w => w[0]).join('').slice(0,3).toUpperCase();
+
+  const listEl = document.getElementById('item-list');
+  ITEMS.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `
+      <div class="badge">${initials(item.name)}</div>
+      <div class="item-name">${item.name}</div>
+      <input class="qty-input" type="number" min="0" value="0" data-id="${item.id}" inputmode="numeric">
+      <div class="item-price" id="price-${item.id}"></div>
+    `;
+    listEl.appendChild(row);
+  });
+
+  document.querySelectorAll('.qty-input').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const v = Math.max(0, parseInt(inp.value || '0', 10) || 0);
+      state.qty[inp.dataset.id] = v;
+      render();
+    });
+  });
+
+  document.getElementById('faccao').addEventListener('input', (e) => {
+    state.faccao = e.target.value.trim();
+    render();
+  });
+
+  document.getElementById('input-desmanche').addEventListener('input', (e) => {
+    state.desmanche = Math.max(0, parseFloat(e.target.value || '0') || 0);
+    render();
+  });
+  document.getElementById('input-lavagem').addEventListener('input', (e) => {
+    state.lavagem = Math.max(0, parseFloat(e.target.value || '0') || 0);
+    render();
+  });
+
+  const btnSim = document.getElementById('btn-sim');
+  const btnNao = document.getElementById('btn-nao');
+  btnSim.addEventListener('click', () => { state.parceria = true; btnSim.classList.add('active'); btnNao.classList.remove('active'); render(); });
+  btnNao.addEventListener('click', () => { state.parceria = false; btnNao.classList.add('active'); btnSim.classList.remove('active'); render(); });
+
+  function unitPrice(item){ return state.parceria ? item.parceria : item.sem; }
+
+  function computeAll(){
+    const rate = state.parceria ? 0.8 : 0.7;
+    const chosen = ITEMS.filter(i => state.qty[i.id] > 0);
+    const itemsTotal = chosen.reduce((sum, i) => sum + unitPrice(i) * state.qty[i.id], 0);
+    const desmancheLiberado = state.desmanche * rate;
+    const lavagemLiberado = state.lavagem * rate;
+    const grandTotal = itemsTotal + state.desmanche + state.lavagem;
+    const grandDeposito = grandTotal * rate;
+    return { rate, chosen, itemsTotal, desmancheLiberado, lavagemLiberado, grandTotal, grandDeposito };
+  }
+
+  function render(){
+    // update unit prices in table
+    ITEMS.forEach(item => {
+      document.getElementById('price-' + item.id).textContent = fmtBRLspace(unitPrice(item));
+    });
+
+    const { rate, chosen, desmancheLiberado, lavagemLiberado, grandTotal, grandDeposito } = computeAll();
+
+    document.getElementById('out-desmanche').textContent = fmtBRL(desmancheLiberado);
+    document.getElementById('out-lavagem').textContent = fmtBRL(lavagemLiberado);
+
+    const body = document.getElementById('receipt-body');
+    const stamp = document.getElementById('stamp');
+
+    const hasContent = chosen.length > 0 || state.desmanche > 0 || state.lavagem > 0;
+
+    if (!hasContent) {
+      body.innerHTML = `<div class="empty-note">Informe a quantidade de itens ou um valor de desmanche/lavagem para gerar o comprovante.</div>`;
+      stamp.classList.remove('show');
+      document.getElementById('receipt-time').textContent = '';
+      return;
+    }
+
+    const partes = [
+      ...chosen.map(i => `${state.qty[i.id]}x ${i.name}`),
+      ...(state.desmanche > 0 ? [`Desmanche (${fmtBRL(state.desmanche)})`] : []),
+      ...(state.lavagem > 0 ? [`Lavagem (${fmtBRL(state.lavagem)})`] : [])
+    ];
+    const produtos = partes.join(', ');
+    const faccaoTxt = state.faccao || '—';
+    const parceriaTxt = state.parceria ? 'Sim' : 'Não';
+
+    body.innerHTML = `
+      <div class="receipt-line"><span class="dot">●</span><span class="k">Facção:</span><span class="v">${faccaoTxt}</span></div>
+      <div class="receipt-line"><span class="dot">●</span><span class="k">Parceria:</span><span class="v">${parceriaTxt}</span></div>
+      <div class="receipt-line"><span class="dot">●</span><span class="k">Produtos:</span><span class="v">${produtos}</span></div>
+      <div class="receipt-line total"><span class="dot">●</span><span class="k">Valor total:</span><span class="v">${fmtBRL(grandTotal)}</span></div>
+      <div class="receipt-line deposit"><span class="dot">●</span><span class="k">Valor depositado:</span><span class="v">${fmtBRL(grandDeposito)}</span></div>
+    `;
+
+    stamp.classList.add('show');
+    document.getElementById('receipt-time').textContent = new Date().toLocaleString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    const { chosen, grandTotal, grandDeposito } = computeAll();
+    const hasContent = chosen.length > 0 || state.desmanche > 0 || state.lavagem > 0;
+    if (!hasContent) return;
+
+    const partes = [
+      ...chosen.map(i => `${state.qty[i.id]}x ${i.name}`),
+      ...(state.desmanche > 0 ? [`Desmanche (${fmtBRL(state.desmanche)})`] : []),
+      ...(state.lavagem > 0 ? [`Lavagem (${fmtBRL(state.lavagem)})`] : [])
+    ];
+    const produtos = partes.join(', ');
+    const faccaoTxt = state.faccao || '—';
+    const parceriaTxt = state.parceria ? 'Sim' : 'Não';
+
+    const text = [
+      `● Facção: ${faccaoTxt}`,
+      `● Parceria: ${parceriaTxt}`,
+      `● Produtos: ${produtos}`,
+      `● Valor total: ${fmtBRL(grandTotal)}`,
+      `● Valor depositado: ${fmtBRL(grandDeposito)}`
+    ].join('\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      const original = btn.textContent;
+      btn.textContent = 'Copiado ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1600);
+    });
+  });
+
+  render();
+</script>
+</body>
+</html>
