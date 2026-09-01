@@ -697,7 +697,11 @@
 
   document.getElementById('faccao').addEventListener('input', (e) => {
     state.faccao = e.target.value.trim();
-    const match = state.parcerias.find(p => p.name.toLowerCase() === state.faccao.toLowerCase());
+    const normalizeParceriaName = (name) =>
+      name.trim().toLocaleLowerCase('pt-BR').replace(/[.-]/g, '').replace(/\s+/g, ' ');
+    const match = state.parcerias.find(p =>
+      normalizeParceriaName(p.name) === normalizeParceriaName(state.faccao)
+    );
     const linkedTag = document.getElementById('linked-tag');
     if (match) {
       state.parceria = match.parceria;
@@ -721,7 +725,11 @@
   document.getElementById('cad-add').addEventListener('click', () => {
     const name = cadNome.value.trim();
     if (!name) return;
-    const idx = state.parcerias.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    const normalizeParceriaName = (name) =>
+      name.trim().toLocaleLowerCase('pt-BR').replace(/[.-]/g, '').replace(/\s+/g, ' ');
+    const idx = state.parcerias.findIndex(p =>
+      normalizeParceriaName(p.name) === normalizeParceriaName(name)
+    );
     if (idx >= 0) state.parcerias[idx] = { name, parceria: cadParceria };
     else state.parcerias.push({ name, parceria: cadParceria });
     cadNome.value = '';
