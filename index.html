@@ -175,6 +175,104 @@
   .toggle button:not(.active):hover{ color: var(--bone); }
   .toggle button:focus-visible{ outline: 2px solid var(--red-bright); outline-offset: -2px; }
 
+  .toggle.small button{ padding: 9px 14px; font-size: 12px; }
+
+  /* ---------- Cadastro de Parcerias ---------- */
+  .cadastro-form{
+    display:grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    align-items:end;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 560px){
+    .cadastro-form{ grid-template-columns: 1fr; }
+  }
+  .btn-add{
+    background: var(--red);
+    color: var(--bone);
+    border: 1px solid var(--red-bright);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: 4px;
+    cursor:pointer;
+    white-space: nowrap;
+    transition: background .15s;
+  }
+  .btn-add:hover{ background: #d61a1a; }
+  .btn-add:disabled{ opacity: 0.4; cursor: not-allowed; }
+
+  .cadastro-list{
+    display:flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 4px;
+  }
+  .cadastro-item{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    padding: 9px 10px;
+  }
+  .cadastro-item .nome{
+    flex: 1;
+    font-size: 14px;
+    color: var(--bone);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .badge-parceria{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink:0;
+  }
+  .badge-parceria.sim{ background: rgba(61,220,115,0.12); color: var(--green); border: 1px solid rgba(61,220,115,0.4); }
+  .badge-parceria.nao{ background: rgba(255,46,46,0.1); color: var(--red-bright); border: 1px solid rgba(255,46,46,0.35); }
+  .mini-btn{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 6px 9px;
+    border-radius: 3px;
+    cursor:pointer;
+    flex-shrink:0;
+    transition: all .15s;
+  }
+  .mini-btn:hover{ color: var(--bone); border-color: var(--silver); }
+  .mini-btn.danger:hover{ color: var(--red-bright); border-color: var(--red-bright); }
+  .cadastro-empty{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+    padding: 6px 2px 2px;
+  }
+  .linked-tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--green);
+    margin-top: 6px;
+    display:none;
+  }
+  .linked-tag.show{ display:block; }
+
   /* ---------- Item table ---------- */
   .item-row{
     display:grid;
@@ -426,10 +524,31 @@
 
     <!-- CONFIG CARD -->
     <div class="card">
-      <div class="top-controls">
+      <div class="card-title">Cadastro de Parcerias</div>
+
+      <div class="cadastro-form">
         <div>
-          <label for="faccao">Facção</label>
-          <input type="text" id="faccao" placeholder="Digite o nome da facção">
+          <label for="cad-nome">Nome da facção</label>
+          <input type="text" id="cad-nome" placeholder="Ex: Holanda">
+        </div>
+        <div>
+          <label>Parceria</label>
+          <div class="toggle small">
+            <button type="button" id="cad-sim">SIM</button>
+            <button type="button" id="cad-nao" class="active">NÃO</button>
+          </div>
+        </div>
+        <button class="btn-add" id="cad-add" type="button">+ Cadastrar</button>
+      </div>
+
+      <div class="cadastro-list" id="cadastro-list"></div>
+
+      <div class="top-controls" style="margin-top:18px">
+        <div>
+          <label for="faccao">Facção (comprovante atual)</label>
+          <input type="text" id="faccao" placeholder="Digite ou selecione uma facção cadastrada" list="faccoes-datalist">
+          <datalist id="faccoes-datalist"></datalist>
+          <div class="linked-tag" id="linked-tag">🔗 Parceria aplicada automaticamente do cadastro</div>
         </div>
         <div>
           <label>Parceria</label>
@@ -440,7 +559,7 @@
         </div>
       </div>
 
-      <div class="card-title">Itens</div>
+      <div class="card-title" style="margin-top:22px">Itens</div>
 
       <div class="item-row head">
         <div></div>
@@ -457,7 +576,8 @@
         <div></div>
         <div>Serviço</div>
         <div>Valor recebido</div>
-        <div style="text-align:right">Valor do cliente</div>
+        <div style="text-align:right">Cliente recebe</div>
+        <div style="text-align:right">Nossa comissão</div>
       </div>
 
       <div class="service-row">
@@ -466,7 +586,8 @@
         <div class="money-input-wrap">
           <input class="money-input" type="number" min="0" value="0" id="input-desmanche" inputmode="numeric">
         </div>
-        <div class="liberado"><span class="lbl">Liberado</span><span id="out-desmanche">R$0</span></div>
+        <div class="liberado cliente"><span class="lbl">Cliente</span><span id="out-desmanche-cliente">R$0</span></div>
+        <div class="liberado comissao"><span class="lbl">Comissão</span><span id="out-desmanche-comissao">R$0</span></div>
       </div>
 
       <div class="service-row">
@@ -475,12 +596,18 @@
         <div class="money-input-wrap">
           <input class="money-input" type="number" min="0" value="0" id="input-lavagem" inputmode="numeric">
         </div>
-        <div class="liberado"><span class="lbl">Liberado</span><span id="out-lavagem">R$0</span></div>
+        <div class="liberado cliente"><span class="lbl">Cliente</span><span id="out-lavagem-cliente">R$0</span></div>
+        <div class="liberado comissao"><span class="lbl">Comissão</span><span id="out-lavagem-comissao">R$0</span></div>
+      </div>
+
+      <div class="commission-total" id="commission-total-box" style="display:none">
+        <span>Comissão total (desmanche + lavagem)</span>
+        <b id="commission-total-val">R$0</b>
       </div>
 
       <div class="rate-note">
-        <b>Taxa aplicada</b> — sobre itens, desmanche e lavagem, conforme parceria:<br>
-        Com parceria: <b>80%</b> &nbsp;·&nbsp; Sem parceria: <b>70%</b>
+        <b>Regra do desmanche/lavagem</b> — o repasse ao cliente é de 80% (com parceria) ou 70% (sem parceria); a facção fica com a comissão restante (20% ou 30%).<br>
+        <b>Itens da tabela</b> seguem a lógica normal de compra + depósito nas mesmas taxas.
       </div>
     </div>
 
@@ -509,6 +636,7 @@
     { id:'silenciador',name:'Silenciador',       parceria:40500, sem:45000 },
     { id:'ticket',    name:'Ticket de Corrida',  parceria:6480,  sem:7200  },
     { id:'colete',    name:'Colete',             parceria:14580, sem:16200 },
+    { id:'pendrive',  name:'Pendrive',            parceria:16200, sem:18000 },
   ];
 
   const state = {
@@ -516,8 +644,31 @@
     parceria: false,
     qty: Object.fromEntries(ITEMS.map(i => [i.id, 0])),
     desmanche: 0,
-    lavagem: 0
+    lavagem: 0,
+    parcerias: []
   };
+
+  const STORAGE_KEY = 'tdr-parcerias-cadastradas';
+
+  async function loadParcerias(){
+    try {
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if (res && res.value) {
+        state.parcerias = JSON.parse(res.value);
+      }
+    } catch (e) {
+      state.parcerias = [];
+    }
+    renderCadastroList();
+  }
+
+  async function saveParcerias(){
+    try {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state.parcerias), false);
+    } catch (e) {
+      console.error('Falha ao salvar cadastro de parcerias', e);
+    }
+  }
 
   const fmtBRL = (n) => 'R$' + new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.round(n));
   const fmtBRLspace = (n) => 'R$ ' + new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Math.round(n));
@@ -546,8 +697,80 @@
 
   document.getElementById('faccao').addEventListener('input', (e) => {
     state.faccao = e.target.value.trim();
+    const match = state.parcerias.find(p => p.name.toLowerCase() === state.faccao.toLowerCase());
+    const linkedTag = document.getElementById('linked-tag');
+    if (match) {
+      state.parceria = match.parceria;
+      if (match.parceria) { btnSim.classList.add('active'); btnNao.classList.remove('active'); }
+      else { btnNao.classList.add('active'); btnSim.classList.remove('active'); }
+      linkedTag.classList.add('show');
+    } else {
+      linkedTag.classList.remove('show');
+    }
     render();
   });
+
+  // ---- Cadastro de Parcerias ----
+  const cadNome = document.getElementById('cad-nome');
+  const cadSim = document.getElementById('cad-sim');
+  const cadNao = document.getElementById('cad-nao');
+  let cadParceria = false;
+  cadSim.addEventListener('click', () => { cadParceria = true; cadSim.classList.add('active'); cadNao.classList.remove('active'); });
+  cadNao.addEventListener('click', () => { cadParceria = false; cadNao.classList.add('active'); cadSim.classList.remove('active'); });
+
+  document.getElementById('cad-add').addEventListener('click', () => {
+    const name = cadNome.value.trim();
+    if (!name) return;
+    const idx = state.parcerias.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+    if (idx >= 0) state.parcerias[idx] = { name, parceria: cadParceria };
+    else state.parcerias.push({ name, parceria: cadParceria });
+    cadNome.value = '';
+    saveParcerias();
+    renderCadastroList();
+  });
+
+  cadNome.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('cad-add').click();
+  });
+
+  function renderCadastroList(){
+    const listEl = document.getElementById('cadastro-list');
+    const datalist = document.getElementById('faccoes-datalist');
+    datalist.innerHTML = state.parcerias.map(p => `<option value="${p.name}">`).join('');
+
+    if (state.parcerias.length === 0) {
+      listEl.innerHTML = `<div class="cadastro-empty">Nenhuma facção cadastrada ainda.</div>`;
+      return;
+    }
+    listEl.innerHTML = state.parcerias.map((p, i) => `
+      <div class="cadastro-item">
+        <span class="nome">${p.name}</span>
+        <span class="badge-parceria ${p.parceria ? 'sim' : 'nao'}">${p.parceria ? 'Sim' : 'Não'}</span>
+        <button class="mini-btn" data-use="${i}">Usar</button>
+        <button class="mini-btn danger" data-remove="${i}">Remover</button>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('[data-use]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = state.parcerias[parseInt(btn.dataset.use, 10)];
+        document.getElementById('faccao').value = p.name;
+        state.faccao = p.name;
+        state.parceria = p.parceria;
+        if (p.parceria) { btnSim.classList.add('active'); btnNao.classList.remove('active'); }
+        else { btnNao.classList.add('active'); btnSim.classList.remove('active'); }
+        document.getElementById('linked-tag').classList.add('show');
+        render();
+      });
+    });
+    listEl.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.parcerias.splice(parseInt(btn.dataset.remove, 10), 1);
+        saveParcerias();
+        renderCadastroList();
+      });
+    });
+  }
 
   document.getElementById('input-desmanche').addEventListener('input', (e) => {
     state.desmanche = Math.max(0, parseFloat(e.target.value || '0') || 0);
@@ -569,11 +792,15 @@
     const rate = state.parceria ? 0.8 : 0.7;
     const chosen = ITEMS.filter(i => state.qty[i.id] > 0);
     const itemsTotal = chosen.reduce((sum, i) => sum + unitPrice(i) * state.qty[i.id], 0);
-    const desmancheLiberado = state.desmanche * rate;
-    const lavagemLiberado = state.lavagem * rate;
-    const grandTotal = itemsTotal + state.desmanche + state.lavagem;
-    const grandDeposito = grandTotal * rate;
-    return { rate, chosen, itemsTotal, desmancheLiberado, lavagemLiberado, grandTotal, grandDeposito };
+    const itemsDeposito = itemsTotal * rate;
+
+    const desmancheCliente = state.desmanche * rate;
+    const desmancheComissao = state.desmanche * (1 - rate);
+    const lavagemCliente = state.lavagem * rate;
+    const lavagemComissao = state.lavagem * (1 - rate);
+    const comissaoTotal = desmancheComissao + lavagemComissao;
+
+    return { rate, chosen, itemsTotal, itemsDeposito, desmancheCliente, desmancheComissao, lavagemCliente, lavagemComissao, comissaoTotal };
   }
 
   function render(){
@@ -582,10 +809,20 @@
       document.getElementById('price-' + item.id).textContent = fmtBRLspace(unitPrice(item));
     });
 
-    const { rate, chosen, desmancheLiberado, lavagemLiberado, grandTotal, grandDeposito } = computeAll();
+    const { chosen, itemsTotal, itemsDeposito, desmancheCliente, desmancheComissao, lavagemCliente, lavagemComissao, comissaoTotal } = computeAll();
 
-    document.getElementById('out-desmanche').textContent = fmtBRL(desmancheLiberado);
-    document.getElementById('out-lavagem').textContent = fmtBRL(lavagemLiberado);
+    document.getElementById('out-desmanche-cliente').textContent = fmtBRL(desmancheCliente);
+    document.getElementById('out-desmanche-comissao').textContent = fmtBRL(desmancheComissao);
+    document.getElementById('out-lavagem-cliente').textContent = fmtBRL(lavagemCliente);
+    document.getElementById('out-lavagem-comissao').textContent = fmtBRL(lavagemComissao);
+
+    const commBox = document.getElementById('commission-total-box');
+    if (comissaoTotal > 0) {
+      commBox.style.display = 'flex';
+      document.getElementById('commission-total-val').textContent = fmtBRL(comissaoTotal);
+    } else {
+      commBox.style.display = 'none';
+    }
 
     const body = document.getElementById('receipt-body');
     const stamp = document.getElementById('stamp');
@@ -599,48 +836,60 @@
       return;
     }
 
-    const partes = [
-      ...chosen.map(i => `${state.qty[i.id]}x ${i.name}`),
-      ...(state.desmanche > 0 ? [`Desmanche (${fmtBRL(state.desmanche)})`] : []),
-      ...(state.lavagem > 0 ? [`Lavagem (${fmtBRL(state.lavagem)})`] : [])
-    ];
-    const produtos = partes.join(', ');
     const faccaoTxt = state.faccao || '—';
     const parceriaTxt = state.parceria ? 'Sim' : 'Não';
 
-    body.innerHTML = `
-      <div class="receipt-line"><span class="dot">●</span><span class="k">Facção:</span><span class="v">${faccaoTxt}</span></div>
-      <div class="receipt-line"><span class="dot">●</span><span class="k">Parceria:</span><span class="v">${parceriaTxt}</span></div>
-      <div class="receipt-line"><span class="dot">●</span><span class="k">Produtos:</span><span class="v">${produtos}</span></div>
-      <div class="receipt-line total"><span class="dot">●</span><span class="k">Valor total:</span><span class="v">${fmtBRL(grandTotal)}</span></div>
-      <div class="receipt-line deposit"><span class="dot">●</span><span class="k">Valor depositado:</span><span class="v">${fmtBRL(grandDeposito)}</span></div>
-    `;
+    let lines = [
+      `<div class="receipt-line"><span class="dot">●</span><span class="k">Facção:</span><span class="v">${faccaoTxt}</span></div>`,
+      `<div class="receipt-line"><span class="dot">●</span><span class="k">Parceria:</span><span class="v">${parceriaTxt}</span></div>`
+    ];
+
+    if (chosen.length > 0) {
+      const produtos = chosen.map(i => `${state.qty[i.id]}x ${i.name}`).join(', ');
+      lines.push(`<div class="receipt-line"><span class="dot">●</span><span class="k">Produtos:</span><span class="v">${produtos}</span></div>`);
+      lines.push(`<div class="receipt-line total"><span class="dot">●</span><span class="k">Valor total:</span><span class="v">${fmtBRL(itemsTotal)}</span></div>`);
+      lines.push(`<div class="receipt-line deposit"><span class="dot">●</span><span class="k">Valor depositado:</span><span class="v">${fmtBRL(itemsDeposito)}</span></div>`);
+    }
+    if (state.desmanche > 0) {
+      lines.push(`<div class="receipt-line"><span class="dot">●</span><span class="k">Desmanche:</span><span class="v">${fmtBRL(state.desmanche)} recebido — cliente ${fmtBRL(desmancheCliente)} · comissão ${fmtBRL(desmancheComissao)}</span></div>`);
+    }
+    if (state.lavagem > 0) {
+      lines.push(`<div class="receipt-line"><span class="dot">●</span><span class="k">Lavagem:</span><span class="v">${fmtBRL(state.lavagem)} recebido — cliente ${fmtBRL(lavagemCliente)} · comissão ${fmtBRL(lavagemComissao)}</span></div>`);
+    }
+
+    body.innerHTML = lines.join('');
 
     stamp.classList.add('show');
     document.getElementById('receipt-time').textContent = new Date().toLocaleString('pt-BR', { hour:'2-digit', minute:'2-digit' });
   }
 
   document.getElementById('copy-btn').addEventListener('click', () => {
-    const { chosen, grandTotal, grandDeposito } = computeAll();
+    const { chosen, itemsTotal, itemsDeposito, desmancheCliente, desmancheComissao, lavagemCliente, lavagemComissao } = computeAll();
     const hasContent = chosen.length > 0 || state.desmanche > 0 || state.lavagem > 0;
     if (!hasContent) return;
 
-    const partes = [
-      ...chosen.map(i => `${state.qty[i.id]}x ${i.name}`),
-      ...(state.desmanche > 0 ? [`Desmanche (${fmtBRL(state.desmanche)})`] : []),
-      ...(state.lavagem > 0 ? [`Lavagem (${fmtBRL(state.lavagem)})`] : [])
-    ];
-    const produtos = partes.join(', ');
     const faccaoTxt = state.faccao || '—';
     const parceriaTxt = state.parceria ? 'Sim' : 'Não';
 
-    const text = [
+    let lines = [
       `● Facção: ${faccaoTxt}`,
-      `● Parceria: ${parceriaTxt}`,
-      `● Produtos: ${produtos}`,
-      `● Valor total: ${fmtBRL(grandTotal)}`,
-      `● Valor depositado: ${fmtBRL(grandDeposito)}`
-    ].join('\n');
+      `● Parceria: ${parceriaTxt}`
+    ];
+
+    if (chosen.length > 0) {
+      const produtos = chosen.map(i => `${state.qty[i.id]}x ${i.name}`).join(', ');
+      lines.push(`● Produtos: ${produtos}`);
+      lines.push(`● Valor total: ${fmtBRL(itemsTotal)}`);
+      lines.push(`● Valor depositado: ${fmtBRL(itemsDeposito)}`);
+    }
+    if (state.desmanche > 0) {
+      lines.push(`● Desmanche: ${fmtBRL(state.desmanche)} recebido — cliente ${fmtBRL(desmancheCliente)} · comissão ${fmtBRL(desmancheComissao)}`);
+    }
+    if (state.lavagem > 0) {
+      lines.push(`● Lavagem: ${fmtBRL(state.lavagem)} recebido — cliente ${fmtBRL(lavagemCliente)} · comissão ${fmtBRL(lavagemComissao)}`);
+    }
+
+    const text = lines.join('\n');
 
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copy-btn');
@@ -651,6 +900,7 @@
     });
   });
 
+  loadParcerias();
   render();
 </script>
 </body>
