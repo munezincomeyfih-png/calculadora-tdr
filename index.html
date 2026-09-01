@@ -205,6 +205,21 @@
   .btn-add:hover{ background: #d61a1a; }
   .btn-add:disabled{ opacity: 0.4; cursor: not-allowed; }
 
+  .search-wrap{ margin-bottom: 12px; }
+  .search-wrap input{
+    width:100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--bone);
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 9px 12px;
+    border-radius: 4px;
+    outline:none;
+  }
+  .search-wrap input:focus{ border-color: var(--red-bright); box-shadow: 0 0 0 3px rgba(255,46,46,0.15); }
+  .search-wrap input::placeholder{ color: #52413a; }
+
   .cadastro-list{
     display:flex;
     flex-direction: column;
@@ -541,6 +556,10 @@
         <button class="btn-add" id="cad-add" type="button">+ Cadastrar</button>
       </div>
 
+      <div class="search-wrap">
+        <input type="text" id="cad-search" placeholder="🔍 Pesquisar facção cadastrada...">
+      </div>
+
       <div class="cadastro-list" id="cadastro-list"></div>
 
       <div class="top-controls" style="margin-top:18px">
@@ -636,7 +655,7 @@
     { id:'silenciador',name:'Silenciador',       parceria:40500, sem:45000 },
     { id:'ticket',    name:'Ticket de Corrida',  parceria:6480,  sem:7200  },
     { id:'colete',    name:'Colete',             parceria:14580, sem:16200 },
-    { id:'pendrive',  name:'Pendrive',            parceria:16200, sem:18000 },
+    { id:'Pendrive', name:'Pendrive', parceria: 16200, sem:18000}
   ];
 
   const state = {
@@ -650,6 +669,26 @@
 
   const STORAGE_KEY = 'tdr-parcerias-cadastradas';
 
+  // Normalizes for comparison only (display keeps the original text the user typed):
+  // lowercase + strip accents (á→a, ç→c...) + collapse extra spaces.
+  function normalize(str){
+    return (str || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  const DEFAULT_PARCERIAS = [
+    { name: 'Canadá', parceria: true },
+    { name: 'Yakuza', parceria: true },
+    { name: 'Egito', parceria: true },
+    { name: 'DZ9', parceria: true },
+    { name: 'Restaurante', parceria: true },
+  ];
+
   async function loadParcerias(){
     try {
       const res = await window.storage.get(STORAGE_KEY, false);
@@ -659,6 +698,13 @@
     } catch (e) {
       state.parcerias = [];
     }
+    // Seed defaults only for names not already registered, so nothing gets overwritten.
+    let changed = false;
+    DEFAULT_PARCERIAS.forEach(def => {
+      const exists = state.parcerias.some(p => normalize(p.name) === normalize(def.name));
+      if (!exists) { state.parcerias.push(def); changed = true; }
+    });
+    if (changed) await saveParcerias();
     renderCadastroList();
   }
 
@@ -697,11 +743,7 @@
 
   document.getElementById('faccao').addEventListener('input', (e) => {
     state.faccao = e.target.value.trim();
-    const normalizeParceriaName = (name) =>
-      name.trim().toLocaleLowerCase('pt-BR').replace(/[.-]/g, '').replace(/\s+/g, ' ');
-    const match = state.parcerias.find(p =>
-      normalizeParceriaName(p.name) === normalizeParceriaName(state.faccao)
-    );
+    const match = state.parcerias.find(p => normalize(p.name) === normalize(state.faccao));
     const linkedTag = document.getElementById('linked-tag');
     if (match) {
       state.parceria = match.parceria;
@@ -725,11 +767,7 @@
   document.getElementById('cad-add').addEventListener('click', () => {
     const name = cadNome.value.trim();
     if (!name) return;
-    const normalizeParceriaName = (name) =>
-      name.trim().toLocaleLowerCase('pt-BR').replace(/[.-]/g, '').replace(/\s+/g, ' ');
-    const idx = state.parcerias.findIndex(p =>
-      normalizeParceriaName(p.name) === normalizeParceriaName(name)
-    );
+    const idx = state.parcerias.findIndex(p => normalize(p.name) === normalize(name));
     if (idx >= 0) state.parcerias[idx] = { name, parceria: cadParceria };
     else state.parcerias.push({ name, parceria: cadParceria });
     cadNome.value = '';
@@ -741,23 +779,39 @@
     if (e.key === 'Enter') document.getElementById('cad-add').click();
   });
 
+  const cadSearch = document.getElementById('cad-search');
+  cadSearch.addEventListener('input', () => renderCadastroList());
+
   function renderCadastroList(){
     const listEl = document.getElementById('cadastro-list');
     const datalist = document.getElementById('faccoes-datalist');
     datalist.innerHTML = state.parcerias.map(p => `<option value="${p.name}">`).join('');
 
+    const term = normalize(cadSearch.value);
+    const filtered = term
+      ? state.parcerias.filter(p => normalize(p.name).includes(term))
+      : state.parcerias;
+
     if (state.parcerias.length === 0) {
       listEl.innerHTML = `<div class="cadastro-empty">Nenhuma facção cadastrada ainda.</div>`;
       return;
     }
-    listEl.innerHTML = state.parcerias.map((p, i) => `
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div class="cadastro-empty">Nenhuma facção encontrada para "${cadSearch.value}".</div>`;
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(p => {
+      const i = state.parcerias.indexOf(p);
+      return `
       <div class="cadastro-item">
         <span class="nome">${p.name}</span>
         <span class="badge-parceria ${p.parceria ? 'sim' : 'nao'}">${p.parceria ? 'Sim' : 'Não'}</span>
         <button class="mini-btn" data-use="${i}">Usar</button>
         <button class="mini-btn danger" data-remove="${i}">Remover</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     listEl.querySelectorAll('[data-use]').forEach(btn => {
       btn.addEventListener('click', () => {
